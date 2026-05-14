@@ -1,15 +1,7 @@
-use std::io::{self, Write};
-
 use clap::Parser;
-use futures::StreamExt;
 use tracing_subscriber::EnvFilter;
 
-use agency::{
-    message::{ContentBlock, Message, Role},
-    provider::{CompletionRequest, LlmProvider},
-    providers::openai_compat::OpenAICompatProvider,
-    stream::StreamEvent,
-};
+use agency::{provider::LlmProvider, providers::openai_compat::OpenAICompatProvider, repl::Repl};
 
 #[derive(Parser)]
 #[command(
@@ -30,8 +22,12 @@ struct Cli {
     #[arg(long)]
     api_key: Option<String>,
 
-    /// Prompt to send
-    prompt: String,
+    /// Optional system prompt
+    #[arg(short, long)]
+    system: Option<String>,
+
+    /// Single-turn prompt. Omit to start the interactive REPL.
+    prompt: Option<String>,
 }
 
 #[tokio::main]
@@ -51,32 +47,47 @@ async fn run() -> agency::error::Result<()> {
         )
         .init();
 
-    let provider = OpenAICompatProvider::new(&cli.base_url, cli.api_key);
+    let provider: Box<dyn LlmProvider> =
+        Box::new(OpenAICompatProvider::new(&cli.base_url, cli.api_key));
 
-    let request = CompletionRequest {
-        model: cli.model,
-        messages: vec![Message {
-            role: Role::User,
-            content: vec![ContentBlock::Text { text: cli.prompt }],
-        }],
-        system: None,
-        temperature: None,
-        max_tokens: None,
-    };
+    if let Some(prompt) = cli.prompt {
+        // Single-turn mode (M1 behaviour)
+        use agency::{
+            message::{ContentBlock, Message, Role},
+            provider::CompletionRequest,
+            stream::StreamEvent,
+        };
+        use futures::StreamExt;
+        use std::io::{self, Write};
 
-    let mut stream = provider.stream(request).await?;
+        let request = CompletionRequest {
+            model: cli.model,
+            messages: vec![Message {
+                role: Role::User,
+                content: vec![ContentBlock::Text { text: prompt }],
+            }],
+            system: cli.system,
+            temperature: None,
+            max_tokens: None,
+        };
 
-    while let Some(event) = stream.next().await {
-        match event? {
-            StreamEvent::TextDelta(text) => {
-                print!("{text}");
-                io::stdout().flush()?;
+        let mut stream = provider.stream(request).await?;
+        while let Some(event) = stream.next().await {
+            match event? {
+                StreamEvent::TextDelta(text) => {
+                    print!("{text}");
+                    io::stdout().flush()?;
+                }
+                StreamEvent::MessageEnd { .. } => break,
+                _ => {}
             }
-            StreamEvent::MessageEnd { .. } => break,
-            _ => {}
         }
+        println!();
+    } else {
+        // Interactive REPL mode
+        let mut repl = Repl::new(provider, cli.model, cli.system);
+        repl.run().await?;
     }
-    println!();
 
     Ok(())
 }

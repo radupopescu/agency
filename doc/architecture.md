@@ -8,11 +8,12 @@ compile times or module discipline justify it (expected around M6/M7).
 ```
 src/
 ├── lib.rs            re-exports the public module tree
-├── main.rs           CLI entry point (clap + tokio::main)
+├── main.rs           CLI entry point — single-turn or REPL mode
 ├── error.rs          Error enum, Result<T> alias
 ├── message.rs        Role, ContentBlock, Message, Conversation
 ├── stream.rs         StreamEvent, StopReason
 ├── provider.rs       LlmProvider trait, CompletionRequest, EventStream
+├── repl.rs           Repl struct — multi-turn loop, slash commands, save/load
 └── providers/
     └── openai_compat.rs   OpenAICompatProvider
 ```

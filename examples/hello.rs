@@ -1,9 +1,9 @@
 /// Run with:
-///   cargo run --example m1_hello -- --base-url http://localhost:1234/v1 \
+///   cargo run --example hello -- --base-url http://localhost:1234/v1 \
 ///       --model "google/gemma-4-e4b" "Hello, what are you?"
 ///
 /// Or set AGENCY_BASE_URL / AGENCY_MODEL env vars and just pass a prompt:
-///   cargo run --example m1_hello "Hello, what are you?"
+///   cargo run --example hello "Hello, what are you?"
 use std::io::{self, Write};
 
 use clap::Parser;

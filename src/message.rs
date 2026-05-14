@@ -38,3 +38,9 @@ pub struct Message {
 pub struct Conversation {
     pub messages: Vec<Message>,
 }
+
+impl Conversation {
+    pub fn push(&mut self, message: Message) {
+        self.messages.push(message);
+    }
+}

@@ -20,7 +20,8 @@ series. Each milestone is anchored by an annotated git tag.
 
 - **M0** `m0-skeleton` ✅ — core types, `LlmProvider` trait, CLI
 - **M1** `m1-streaming` ✅ — `OpenAICompatProvider`, SSE streaming, live-tested
-- **M2** `m2-repl` ⬜ — next
+- **M2** `m2-repl` ✅ — `reedline` REPL, conversation history, `/clear /save /load /quit`
+- **M3** `m3-apertus` ⬜ — next
 
 ## Conventions (quick reference)
 

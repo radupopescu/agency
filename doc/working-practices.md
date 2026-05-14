@@ -47,7 +47,7 @@ core capability. Readers should be able to:
 
 ```sh
 git checkout m2-repl
-cargo run --example m2_repl
+cargo run --example repl
 ```
 
 Examples use `AGENCY_*` env vars for configuration so they work without flags.

@@ -9,7 +9,7 @@ by an annotated git tag (`m0-skeleton`, `m1-streaming`, …).
 |-----|-----------|--------|
 | `m0-skeleton` | Skeleton — core types, `LlmProvider` trait, CLI scaffold | ✅ done |
 | `m1-streaming` | `OpenAICompatProvider` + SSE streaming against LM Studio | ✅ done |
-| `m2-repl` | Multi-turn REPL (`reedline`), in-memory history, `/clear /save /load` | ⬜ pending |
+| `m2-repl` | Multi-turn REPL (`reedline`), in-memory history, `/clear /save /load` | ✅ done |
 | `m3-apertus` | Apertus via publicai.co (config entry or new provider) | ⬜ pending |
 | `m4-config` | TOML config file, multiple provider/model presets | ⬜ pending |
 | `m5-context` | `ContextBuilder`: sliding-window + summarisation strategies | ⬜ pending |
@@ -36,7 +36,7 @@ by an annotated git tag (`m0-skeleton`, `m1-streaming`, …).
 - Normalises `TextDelta`, `MessageEnd`, `Usage` into `StreamEvent`
 - `reqwest 0.13` (rustls), `tokio 1.52`, `async-stream 0.3`
 - `cargo run -- -m <model> <prompt>` streams to stdout
-- `examples/m1_hello.rs`
+- `examples/hello.rs`
 
 ### M2 — REPL
 - `reedline`-based REPL loop

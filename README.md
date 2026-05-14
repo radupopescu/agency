@@ -30,12 +30,12 @@ Optional flags:
 Run the M1 standalone example (env-var friendly):
 
 ```sh
-cargo run --example m1_hello "Hello, what are you?"
+cargo run --example hello "Hello, what are you?"
 
 # Override defaults
 AGENCY_MODEL="google/gemma-4-e4b" \
 AGENCY_BASE_URL="http://localhost:1234/v1" \
-  cargo run --example m1_hello "Hello"
+  cargo run --example hello "Hello"
 ```
 
 ## License
