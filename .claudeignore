@@ -1,0 +1,13 @@
+# Auto-generated / large files with no reading value
+Cargo.lock
+*.lock
+
+# Build artifacts
+target/
+
+# Compiled / binary assets
+*.wasm
+*.so
+*.dylib
+*.a
+*.o
