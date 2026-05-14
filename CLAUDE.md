@@ -21,7 +21,15 @@ series. Each milestone is anchored by an annotated git tag.
 - **M0** `m0-skeleton` ✅ — core types, `LlmProvider` trait, CLI
 - **M1** `m1-streaming` ✅ — `OpenAICompatProvider`, SSE streaming, live-tested
 - **M2** `m2-repl` ✅ — `reedline` REPL, conversation history, `/clear /save /load /quit`
-- **M3** `m3-apertus` ⬜ — next
+- **M3** `m3-config` ⬜ — next
+- **M4** `m4-multimodal` ⬜ — image/file inputs, image outputs
+- **M5** `m5-context` ⬜ — `ContextBuilder`, sliding window + summarisation
+- **M6** `m6-tools` ⬜ — `Tool` trait, built-in tools, agent loop
+- **M7** `m7-persistence` ⬜ — SQLite, `/resume`
+- **M8** `m8-mcp` ⬜ — MCP client
+- **M9** `m9-rag` ⬜ — RAG from scratch
+- **M10** `m10-native` ⬜ — native in-process inference
+- **M11** `m11-apertus` ⬜ — Apertus via publicai.co
 
 ## Conventions (quick reference)
 

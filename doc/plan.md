@@ -10,14 +10,15 @@ by an annotated git tag (`m0-skeleton`, `m1-streaming`, …).
 | `m0-skeleton` | Skeleton — core types, `LlmProvider` trait, CLI scaffold | ✅ done |
 | `m1-streaming` | `OpenAICompatProvider` + SSE streaming against LM Studio | ✅ done |
 | `m2-repl` | Multi-turn REPL (`reedline`), in-memory history, `/clear /save /load` | ✅ done |
-| `m3-apertus` | Apertus via publicai.co (config entry or new provider) | ⬜ pending |
-| `m4-config` | TOML config file, multiple provider/model presets | ⬜ pending |
+| `m3-config` | TOML config file, multiple provider/model presets | ⬜ pending |
+| `m4-multimodal` | Image/file `ContentBlock` variants, provider serialisation, REPL `/attach` | ⬜ pending |
 | `m5-context` | `ContextBuilder`: sliding-window + summarisation strategies | ⬜ pending |
 | `m6-tools` | `Tool` trait, built-in tools, agent loop, approval policy | ⬜ pending |
 | `m7-persistence` | SQLite persistence via `sqlx`, `/resume <id>` | ⬜ pending |
 | `m8-mcp` | MCP client (stdio transport first, then HTTP/SSE) | ⬜ pending |
 | `m9-rag` | RAG from scratch: embeddings, chunker, `sqlite-vec`, retriever | ⬜ pending |
 | `m10-native` | Native in-process inference (mistral.rs / candle on Metal) | ⬜ pending |
+| `m11-apertus` | Apertus via publicai.co (config entry in `OpenAICompatProvider`) | ⬜ pending |
 
 ## Milestone details
 
@@ -44,14 +45,18 @@ by an annotated git tag (`m0-skeleton`, `m1-streaming`, …).
 - Slash commands: `/clear`, `/quit`, `/save <file>`, `/load <file>`
 - Streaming output in the REPL (same `StreamEvent` loop)
 
-### M3 — Apertus
-- Verify publicai.co API shape; likely just a config entry in `OpenAICompatProvider`
-- Provider selection via `--provider` flag
-
-### M4 — Config
+### M3 — Config
 - `~/.config/agency/config.toml` (or `--config` override)
 - Sections: `[providers.<name>]` with `base_url`, `api_key`, `default_model`
 - CLI flags override config values
+
+### M4 — Multimodal
+- Add `Image { media_type, data: ImageData }` and `File { name, media_type, data }` variants to `ContentBlock`
+- `ImageData`: URL reference or base64-encoded bytes
+- Serialise image/file blocks in `OpenAICompatProvider` (OpenAI-compat vision format)
+- Deserialise image blocks from assistant responses (model-generated images where supported)
+- REPL `/attach <path>` command: infer media type, encode, append to next message
+- `examples/vision.rs`: send a local image and stream the description
 
 ### M5 — Context construction
 - `ContextBuilder` type: takes conversation + system + tool schemas + budget
@@ -90,3 +95,7 @@ by an annotated git tag (`m0-skeleton`, `m1-streaming`, …).
 - `mistral.rs` or `candle` provider for in-process Metal inference on Apple Silicon
 - Same `LlmProvider` trait — provider swap is one config line
 - Validates the trait design holds across the HTTP/in-process boundary
+
+### M11 — Apertus
+- Verify publicai.co API shape; likely just a config entry in `OpenAICompatProvider`
+- Provider selection via `--provider` flag or config file
