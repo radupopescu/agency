@@ -10,6 +10,7 @@ src/
 ├── lib.rs            re-exports the public module tree
 ├── main.rs           CLI entry point — single-turn or REPL mode
 ├── error.rs          Error enum, Result<T> alias
+├── config.rs         TOML config: Config, ProviderConfig, Defaults
 ├── message.rs        Role, ContentBlock, Message, Conversation
 ├── stream.rs         StreamEvent, StopReason
 ├── provider.rs       LlmProvider trait, CompletionRequest, EventStream
@@ -23,7 +24,6 @@ Future modules (added per milestone):
 ```
 src/
 ├── agent.rs          Agent struct — owns provider, tools, history, context builder
-├── config.rs         TOML-based configuration
 ├── tools/            Tool trait + built-in tools (read_file, run_shell, …)
 ├── mcp/              MCP client (stdio + HTTP transport)
 └── rag/              EmbeddingsProvider, Chunker, VectorStore, Retriever

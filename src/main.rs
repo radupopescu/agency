@@ -1,7 +1,15 @@
+use std::path::PathBuf;
+
 use clap::Parser;
 use tracing_subscriber::EnvFilter;
 
-use agency::{provider::LlmProvider, providers::openai_compat::OpenAICompatProvider, repl::Repl};
+use agency::{
+    config::Config,
+    error::{Error, Result},
+    provider::LlmProvider,
+    providers::openai_compat::OpenAICompatProvider,
+    repl::Repl,
+};
 
 #[derive(Parser)]
 #[command(
@@ -10,21 +18,29 @@ use agency::{provider::LlmProvider, providers::openai_compat::OpenAICompatProvid
     about = "An LLM agent for learning and experimentation"
 )]
 struct Cli {
-    /// Model name as shown in LM Studio (e.g. "google/gemma-4-e4b")
+    /// Provider name from config (e.g. "local", "apertus")
     #[arg(short, long)]
-    model: String,
+    provider: Option<String>,
 
-    /// OpenAI-compatible API base URL
-    #[arg(long, default_value = "http://localhost:1234/v1")]
-    base_url: String,
+    /// Model name — overrides config default_model
+    #[arg(short, long)]
+    model: Option<String>,
 
-    /// Optional API key
+    /// OpenAI-compatible API base URL — overrides config base_url
+    #[arg(long)]
+    base_url: Option<String>,
+
+    /// API key — overrides config api_key
     #[arg(long)]
     api_key: Option<String>,
 
-    /// Optional system prompt
+    /// System prompt
     #[arg(short, long)]
     system: Option<String>,
+
+    /// Path to config file (default: ~/.config/agency/config.toml)
+    #[arg(long)]
+    config: Option<PathBuf>,
 
     /// Single-turn prompt. Omit to start the interactive REPL.
     prompt: Option<String>,
@@ -38,7 +54,7 @@ async fn main() {
     }
 }
 
-async fn run() -> agency::error::Result<()> {
+async fn run() -> Result<()> {
     let cli = Cli::parse();
 
     tracing_subscriber::fmt()
@@ -47,11 +63,36 @@ async fn run() -> agency::error::Result<()> {
         )
         .init();
 
-    let provider: Box<dyn LlmProvider> =
-        Box::new(OpenAICompatProvider::new(&cli.base_url, cli.api_key));
+    let config = Config::load(cli.config.as_deref())?;
+
+    // Resolve provider section: --provider > config defaults.provider
+    let provider_name = cli
+        .provider
+        .as_deref()
+        .or(config.defaults.provider.as_deref());
+    let provider_cfg = provider_name.and_then(|n| config.provider(n));
+
+    // Merge: CLI flag > provider config > built-in default
+    let base_url = cli
+        .base_url
+        .or_else(|| provider_cfg.and_then(|p| p.base_url.clone()))
+        .unwrap_or_else(|| "http://localhost:1234/v1".into());
+
+    let api_key = cli
+        .api_key
+        .or_else(|| provider_cfg.and_then(|p| p.api_key.clone()));
+
+    let model = cli
+        .model
+        .or_else(|| provider_cfg.and_then(|p| p.default_model.clone()))
+        .ok_or_else(|| {
+            Error::Config("no model specified; use --model or set default_model in config".into())
+        })?;
+
+    let provider: Box<dyn LlmProvider> = Box::new(OpenAICompatProvider::new(&base_url, api_key));
 
     if let Some(prompt) = cli.prompt {
-        // Single-turn mode (M1 behaviour)
+        // Single-turn mode
         use agency::{
             message::{ContentBlock, Message, Role},
             provider::CompletionRequest,
@@ -61,7 +102,7 @@ async fn run() -> agency::error::Result<()> {
         use std::io::{self, Write};
 
         let request = CompletionRequest {
-            model: cli.model,
+            model,
             messages: vec![Message {
                 role: Role::User,
                 content: vec![ContentBlock::Text { text: prompt }],
@@ -85,7 +126,7 @@ async fn run() -> agency::error::Result<()> {
         println!();
     } else {
         // Interactive REPL mode
-        let mut repl = Repl::new(provider, cli.model, cli.system);
+        let mut repl = Repl::new(provider, base_url, model, cli.system);
         repl.run().await?;
     }
 

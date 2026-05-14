@@ -10,7 +10,7 @@ by an annotated git tag (`m0-skeleton`, `m1-streaming`, …).
 | `m0-skeleton` | Skeleton — core types, `LlmProvider` trait, CLI scaffold | ✅ done |
 | `m1-streaming` | `OpenAICompatProvider` + SSE streaming against LM Studio | ✅ done |
 | `m2-repl` | Multi-turn REPL (`reedline`), in-memory history, `/clear /save /load` | ✅ done |
-| `m3-config` | TOML config file, multiple provider/model presets | ⬜ pending |
+| `m3-config` | TOML config file, multiple provider/model presets | ✅ done |
 | `m4-multimodal` | Image/file `ContentBlock` variants, provider serialisation, REPL `/attach` | ⬜ pending |
 | `m5-context` | `ContextBuilder`: sliding-window + summarisation strategies | ⬜ pending |
 | `m6-tools` | `Tool` trait, built-in tools, agent loop, approval policy | ⬜ pending |
@@ -45,10 +45,13 @@ by an annotated git tag (`m0-skeleton`, `m1-streaming`, …).
 - Slash commands: `/clear`, `/quit`, `/save <file>`, `/load <file>`
 - Streaming output in the REPL (same `StreamEvent` loop)
 
-### M3 — Config
+### M3 — Config ✅
 - `~/.config/agency/config.toml` (or `--config` override)
 - Sections: `[providers.<name>]` with `base_url`, `api_key`, `default_model`
-- CLI flags override config values
+- `[defaults] provider` selects the active provider when `--provider` is not given
+- CLI flags override config values; model is required (CLI or config)
+- `src/config.rs`: `Config`, `ProviderConfig`, `Defaults` — load + merge logic
+- `examples/config.rs`
 
 ### M4 — Multimodal
 - Add `Image { media_type, data: ImageData }` and `File { name, media_type, data }` variants to `ContentBlock`

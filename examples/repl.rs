@@ -33,7 +33,7 @@ struct Args {
 async fn main() {
     let args = Args::parse();
     let provider = Box::new(OpenAICompatProvider::new(&args.base_url, args.api_key));
-    let mut repl = Repl::new(provider, args.model, args.system);
+    let mut repl = Repl::new(provider, args.base_url, args.model, args.system);
 
     if let Err(e) = repl.run().await {
         eprintln!("error: {e}");

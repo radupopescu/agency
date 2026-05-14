@@ -62,15 +62,22 @@ impl Prompt for MonoPrompt {
 
 pub struct Repl {
     provider: Box<dyn LlmProvider>,
+    base_url: String,
     model: String,
     system: Option<String>,
     conversation: Conversation,
 }
 
 impl Repl {
-    pub fn new(provider: Box<dyn LlmProvider>, model: String, system: Option<String>) -> Self {
+    pub fn new(
+        provider: Box<dyn LlmProvider>,
+        base_url: String,
+        model: String,
+        system: Option<String>,
+    ) -> Self {
         Self {
             provider,
+            base_url,
             model,
             system,
             conversation: Conversation::default(),
@@ -78,7 +85,10 @@ impl Repl {
     }
 
     pub async fn run(&mut self) -> Result<()> {
-        println!("agency REPL — /help for commands, Ctrl-D to quit");
+        println!("agency REPL");
+        println!("  provider : {}", self.base_url);
+        println!("  model    : {}", self.model);
+        println!("/help for commands, Ctrl-D to quit");
 
         let mut rl = Reedline::create().with_highlighter(Box::new(PlainHighlighter));
         let prompt = MonoPrompt;

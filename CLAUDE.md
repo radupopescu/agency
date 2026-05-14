@@ -21,7 +21,7 @@ series. Each milestone is anchored by an annotated git tag.
 - **M0** `m0-skeleton` ✅ — core types, `LlmProvider` trait, CLI
 - **M1** `m1-streaming` ✅ — `OpenAICompatProvider`, SSE streaming, live-tested
 - **M2** `m2-repl` ✅ — `reedline` REPL, conversation history, `/clear /save /load /quit`
-- **M3** `m3-config` ⬜ — next
+- **M3** `m3-config` ✅ — TOML config, provider presets, CLI override
 - **M4** `m4-multimodal` ⬜ — image/file inputs, image outputs
 - **M5** `m5-context` ⬜ — `ContextBuilder`, sliding window + summarisation
 - **M6** `m6-tools` ⬜ — `Tool` trait, built-in tools, agent loop

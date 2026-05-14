@@ -13,6 +13,9 @@ pub enum Error {
 
     #[error("json: {0}")]
     Json(#[from] serde_json::Error),
+
+    #[error("config: {0}")]
+    Config(String),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
