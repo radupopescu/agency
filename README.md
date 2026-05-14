@@ -1,6 +1,6 @@
 # Agency
 
-A sandbox for learning about and experimenting with AI agents
+An LLM agent for learning and experimentation
 
 ## Build
 
