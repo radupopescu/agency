@@ -1,7 +1,12 @@
+use std::borrow::Cow;
 use std::io::{self, Write};
 
+use crossterm::style::Color;
 use futures::StreamExt;
-use reedline::{DefaultPrompt, DefaultPromptSegment, Reedline, Signal};
+use nu_ansi_term::Style;
+use reedline::{
+    Highlighter, Prompt, PromptEditMode, PromptHistorySearch, Reedline, Signal, StyledText,
+};
 
 use crate::{
     error::Result,
@@ -9,6 +14,51 @@ use crate::{
     provider::{CompletionRequest, LlmProvider},
     stream::StreamEvent,
 };
+
+/// Leaves typed input in the terminal's default color instead of reedline's
+/// default command highlighting.
+struct PlainHighlighter;
+
+impl Highlighter for PlainHighlighter {
+    fn highlight(&self, line: &str, _cursor: usize) -> StyledText {
+        let mut styled = StyledText::new();
+        styled.push((Style::default(), line.to_owned()));
+        styled
+    }
+}
+
+/// A minimal `>>` prompt in the terminal's default color.
+struct MonoPrompt;
+
+impl Prompt for MonoPrompt {
+    fn render_prompt_left(&self) -> Cow<'_, str> {
+        Cow::Borrowed("")
+    }
+    fn render_prompt_right(&self) -> Cow<'_, str> {
+        Cow::Borrowed("")
+    }
+    fn render_prompt_indicator(&self, _mode: PromptEditMode) -> Cow<'_, str> {
+        Cow::Borrowed(">> ")
+    }
+    fn render_prompt_multiline_indicator(&self) -> Cow<'_, str> {
+        Cow::Borrowed(":: ")
+    }
+    fn render_prompt_history_search_indicator(&self, _search: PromptHistorySearch) -> Cow<'_, str> {
+        Cow::Borrowed("?? ")
+    }
+    fn get_prompt_color(&self) -> Color {
+        Color::Reset
+    }
+    fn get_prompt_multiline_color(&self) -> nu_ansi_term::Color {
+        nu_ansi_term::Color::Default
+    }
+    fn get_indicator_color(&self) -> Color {
+        Color::Reset
+    }
+    fn get_prompt_right_color(&self) -> Color {
+        Color::Reset
+    }
+}
 
 pub struct Repl {
     provider: Box<dyn LlmProvider>,
@@ -30,11 +80,8 @@ impl Repl {
     pub async fn run(&mut self) -> Result<()> {
         println!("agency REPL — /help for commands, Ctrl-D to quit");
 
-        let mut rl = Reedline::create();
-        let prompt = DefaultPrompt::new(
-            DefaultPromptSegment::Basic("you".to_owned()),
-            DefaultPromptSegment::Empty,
-        );
+        let mut rl = Reedline::create().with_highlighter(Box::new(PlainHighlighter));
+        let prompt = MonoPrompt;
 
         loop {
             let signal = tokio::task::block_in_place(|| rl.read_line(&prompt));
