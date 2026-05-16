@@ -22,7 +22,7 @@ series. Each milestone is anchored by an annotated git tag.
 - **M1** `m1-streaming` ✅ — `OpenAICompatProvider`, SSE streaming, live-tested
 - **M2** `m2-repl` ✅ — `reedline` REPL, conversation history, `/clear /save /load /quit`
 - **M3** `m3-config` ✅ — TOML config, provider presets, CLI override
-- **M4** `m4-multimodal` ⬜ — image/file inputs, image outputs
+- **M4** `m4-multimodal` ✅ — `Image`/`File` content blocks, OpenAI-compat serialisation, REPL `/attach`
 - **M5** `m5-context` ⬜ — `ContextBuilder`, sliding window + summarisation
 - **M6** `m6-tools` ⬜ — `Tool` trait, built-in tools, agent loop
 - **M7** `m7-persistence` ⬜ — SQLite, `/resume`

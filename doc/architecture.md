@@ -33,13 +33,20 @@ src/
 
 ```
 Role            System | User | Assistant | Tool
-ContentBlock    Text { text } | ToolUse { id, name, input } | ToolResult { … }
+ContentBlock    Text { text }
+              | Image { media_type, data: ImageData }
+              | File  { name, media_type, data: ImageData }
+              | Audio { format, data }            // OpenAI-compat: format is "wav" | "mp3"
+              | ToolUse { id, name, input }
+              | ToolResult { tool_use_id, content, is_error }
+ImageData       Url(String) | Base64(String)
 Message         role: Role, content: Vec<ContentBlock>
 Conversation    messages: Vec<Message>
 ```
 
-`ContentBlock` is the extensibility point: `Image` blocks for multimodal support
-arrive later without changing the rest of the type.
+`ContentBlock` is the extensibility point: image/file blocks slot in without
+changing `Message`/`Conversation`. Each provider decides how to serialise the
+non-text blocks for its wire format (e.g. OpenAI content-parts array).
 
 ## Streaming (`src/stream.rs`, `src/provider.rs`)
 

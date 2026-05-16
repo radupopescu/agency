@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     error::{Error, Result},
-    message::{ContentBlock, Message, Role},
+    message::{ContentBlock, ImageData, Message, Role},
     provider::{CompletionRequest, EventStream, LlmProvider},
     stream::{StopReason, StreamEvent},
 };
@@ -42,7 +42,40 @@ struct ChatRequest {
 #[derive(Serialize)]
 struct OaiMessage {
     role: &'static str,
-    content: String,
+    content: OaiContent,
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum OaiContent {
+    Text(String),
+    Parts(Vec<OaiPart>),
+}
+
+#[derive(Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum OaiPart {
+    Text { text: String },
+    ImageUrl { image_url: OaiImageUrl },
+    File { file: OaiFile },
+    InputAudio { input_audio: OaiAudio },
+}
+
+#[derive(Serialize)]
+struct OaiImageUrl {
+    url: String,
+}
+
+#[derive(Serialize)]
+struct OaiFile {
+    filename: String,
+    file_data: String,
+}
+
+#[derive(Serialize)]
+struct OaiAudio {
+    data: String,
+    format: String,
 }
 
 #[derive(Deserialize)]
@@ -89,6 +122,61 @@ fn text_content(msg: &Message) -> String {
         })
         .collect::<Vec<_>>()
         .join("")
+}
+
+fn data_url(media_type: &str, data: &ImageData) -> String {
+    match data {
+        ImageData::Url(u) => u.clone(),
+        ImageData::Base64(b) => format!("data:{media_type};base64,{b}"),
+    }
+}
+
+/// Build the `content` field for a message. Plain-text messages serialise as a
+/// bare string for maximum server compatibility; messages with images or files
+/// use the OpenAI vision content-parts array.
+fn oai_content(msg: &Message) -> OaiContent {
+    let has_media = msg.content.iter().any(|b| {
+        matches!(
+            b,
+            ContentBlock::Image { .. } | ContentBlock::File { .. } | ContentBlock::Audio { .. }
+        )
+    });
+
+    if !has_media {
+        return OaiContent::Text(text_content(msg));
+    }
+
+    let parts = msg
+        .content
+        .iter()
+        .filter_map(|b| match b {
+            ContentBlock::Text { text } => Some(OaiPart::Text { text: text.clone() }),
+            ContentBlock::Image { media_type, data } => Some(OaiPart::ImageUrl {
+                image_url: OaiImageUrl {
+                    url: data_url(media_type, data),
+                },
+            }),
+            ContentBlock::File {
+                name,
+                media_type,
+                data,
+            } => Some(OaiPart::File {
+                file: OaiFile {
+                    filename: name.clone(),
+                    file_data: data_url(media_type, data),
+                },
+            }),
+            ContentBlock::Audio { format, data } => Some(OaiPart::InputAudio {
+                input_audio: OaiAudio {
+                    data: data.clone(),
+                    format: format.clone(),
+                },
+            }),
+            _ => None,
+        })
+        .collect();
+
+    OaiContent::Parts(parts)
 }
 
 // ── SSE parsing ───────────────────────────────────────────────────────────────
@@ -158,13 +246,13 @@ impl LlmProvider for OpenAICompatProvider {
         if let Some(sys) = &request.system {
             messages.push(OaiMessage {
                 role: "system",
-                content: sys.clone(),
+                content: OaiContent::Text(sys.clone()),
             });
         }
         for msg in &request.messages {
             messages.push(OaiMessage {
                 role: role_str(msg.role),
-                content: text_content(msg),
+                content: oai_content(msg),
             });
         }
 

@@ -11,7 +11,7 @@ by an annotated git tag (`m0-skeleton`, `m1-streaming`, …).
 | `m1-streaming` | `OpenAICompatProvider` + SSE streaming against LM Studio | ✅ done |
 | `m2-repl` | Multi-turn REPL (`reedline`), in-memory history, `/clear /save /load` | ✅ done |
 | `m3-config` | TOML config file, multiple provider/model presets | ✅ done |
-| `m4-multimodal` | Image/file `ContentBlock` variants, provider serialisation, REPL `/attach` | ⬜ pending |
+| `m4-multimodal` | Image/file `ContentBlock` variants, provider serialisation, REPL `/attach` | ✅ done |
 | `m5-context` | `ContextBuilder`: sliding-window + summarisation strategies | ⬜ pending |
 | `m6-tools` | `Tool` trait, built-in tools, agent loop, approval policy | ⬜ pending |
 | `m7-persistence` | SQLite persistence via `sqlx`, `/resume <id>` | ⬜ pending |
@@ -53,13 +53,35 @@ by an annotated git tag (`m0-skeleton`, `m1-streaming`, …).
 - `src/config.rs`: `Config`, `ProviderConfig`, `Defaults` — load + merge logic
 - `examples/config.rs`
 
-### M4 — Multimodal
-- Add `Image { media_type, data: ImageData }` and `File { name, media_type, data }` variants to `ContentBlock`
-- `ImageData`: URL reference or base64-encoded bytes
-- Serialise image/file blocks in `OpenAICompatProvider` (OpenAI-compat vision format)
-- Deserialise image blocks from assistant responses (model-generated images where supported)
-- REPL `/attach <path>` command: infer media type, encode, append to next message
+### M4 — Multimodal ✅
+- `ImageData` enum: `Url(String)` or `Base64(String)` (inline data)
+- `ContentBlock::Image { media_type, data }` and `ContentBlock::File { name, media_type, data }`
+- `ContentBlock::Audio { format, data }` — OpenAI-compat `input_audio`
+  accepts only base64 bytes with `format ∈ { "wav", "mp3" }`, so audio carries
+  its data inline as a `String` rather than reusing `ImageData`
+- `OpenAICompatProvider` serialises image/file/audio blocks as OpenAI content
+  parts (`image_url` with `data:<media_type>;base64,<bytes>` URL, `file` part,
+  or `input_audio` part)
+- Plain-text messages still serialise as a bare string for compatibility
+- REPL `/attach <path>` command: reads the file, base64-encodes it, infers
+  type from extension (images → `Image`, `.wav`/`.mp3` → `Audio`, else `File`),
+  queues the block for the next message
 - `examples/vision.rs`: send a local image and stream the description
+- New dep: `base64 = "0.22"`
+
+Note: streaming deserialisation of model-generated image blocks is not
+implemented — OpenAI-compat SSE doesn't define an image-delta event. Image
+output support arrives with the providers that need it.
+
+**Server compatibility caveat.** LM Studio's OpenAI-compat gateway currently
+restricts `content` parts to `text` and `image_url`. Both `input_audio` and
+`file` parts return `HTTP 400` ("`content` objects must have a `type` field
+that is either `text` or `image_url`"), regardless of the loaded model. The
+serialisation here matches OpenAI's published content-parts schema, so it
+works against providers that implement it (the real OpenAI API, vLLM with
+audio-capable models, etc.) — but expect M4 audio/file attachments to fail
+against LM Studio until that gateway catches up. Image attachments work as
+long as the loaded model is vision-capable.
 
 ### M5 — Context construction
 - `ContextBuilder` type: takes conversation + system + tool schemas + budget
